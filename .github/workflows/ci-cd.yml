@@ -18,11 +18,31 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tests:
+    name: Test 
+    runs-on: ubuntu-latest
+    needs: gitleaks
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependencias Python
+        run: pip install requests pytest
+
+      - name: Pull de las imágenes necesarias
+        run: |
+          docker pull marianocavallo/servidor:latest
+          docker pull marianocavallo/servicio-tarea:latest
+
+      - name: Ejecutar test 
+        run: pytest hit1/tests/test.py -v
+               
   
   build-and-push:
     name: Build y Push a Docker Hub
     runs-on: ubuntu-latest
-    needs: gitleaks          # solo buildea si gitleaks pasó
+    needs: tests          # solo buildea si gitleaks pasó
 
     steps:
       - uses: actions/checkout@v4
