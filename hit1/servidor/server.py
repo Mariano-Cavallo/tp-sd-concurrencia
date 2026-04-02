@@ -1,53 +1,40 @@
-from asyncio import subprocess
 from flask import Flask, request, jsonify
 import docker
 from docker.errors import ImageNotFound, APIError
 import requests
 import time
 import os
+import subprocess
 
 app = Flask(__name__)
 
 
 def get_host_ip():
     try:
-        resultado = subprocess.check_output(
-            ["ip", "route", "show", "default"], text=True
+        resultado = (
+            subprocess.check_output(  # subprocess directo, NO asyncio.subprocess
+                ["ip", "route", "show", "default"], text=True
+            )
         )
         ip = resultado.split()[2]
         print(f"[DEBUG] Host IP detectada: {ip}")
         return ip
     except Exception as e:
-        print(f"[DEBUG] Falló detección de IP: {e}, usando host.docker.internal")
-        # Fallback para Docker Desktop (Windows/Mac)
-        return "host.docker.internal"
+        print(f"[DEBUG] Falló detección de IP: {e}, usando fallback 172.17.0.1")
+        return "172.17.0.1"  # IP del gateway Docker en Linux
 
 
 @app.route("/estado", methods=["GET"])
 def get_estado():
-    return jsonify(
-        {
-            "estado": "activo",
-            "code": 200,
-        }
-    )
+    return jsonify({"estado": "activo", "code": 200})
 
 
 @app.route("/ejecutarTareaRemota", methods=["POST"])
 def ejecutarTareaRemota():
     data = request.get_json()
     imagen = data.get("imagen")
-    # logica de chequeo de la imagen
-
     parametros = data.get("parametros")
-    # logica de tarea valida
 
-    host_ip = get_host_ip()
-    url_tarea = f"http://{host_ip}:{puerto_host}/ejecutarTarea"
-    print(f"[DEBUG] URL del servicio tarea: {url_tarea}")
-
-
-    # logica de autenticacion y autorizacion de docker creo que no es necesario
     try:
         cliente = docker.from_env()
     except docker.errors.DockerException as e:
@@ -59,10 +46,13 @@ def ejecutarTareaRemota():
     except ImageNotFound:
         return jsonify({"error": "Imagen no encontrada"}), 404
 
-    #  RUN
+    # RUN
     try:
-        # ********* fijarse la ip y puerto del contenedor ******** a chequear!!!!!!!!!!!!
-        puerto_host = 5001
+        puerto_host = 5001  # ← movido antes de usarse
+        host_ip = get_host_ip()  # ← obtener IP del host
+        url_tarea = f"http://{host_ip}:{puerto_host}/ejecutarTarea"
+        print(f"[DEBUG] URL del servicio tarea: {url_tarea}")
+
         container = cliente.containers.run(
             imagen, detach=True, ports={"5000/tcp": puerto_host}, remove=True
         )
@@ -81,7 +71,6 @@ def ejecutarTareaRemota():
         finally:
             if container:
                 try:
-                    # Si os._exit(0) ya actuó, stop() lanzará una excepción que ignoramos
                     container.stop()
                 except:
                     pass
