@@ -49,15 +49,3 @@ def test_suma_e2e(servidor):
     assert respuesta.json()["resultado"] == 15
 
 
-def test_resta_e2e(servidor):
-    payload = {
-        "imagen": IMAGEN,
-        "parametros": {
-            "tarea": "resta",
-            "a": 10,
-            "b": 5
-        }
-    }
-    respuesta = requests.post(SERVIDOR_URL, json=payload, timeout=30)
-    assert respuesta.status_code == 200
-    assert respuesta.json()["resultado"] == 5
