@@ -1,3 +1,4 @@
+from asyncio import subprocess
 from flask import Flask, request, jsonify
 import docker
 from docker.errors import ImageNotFound, APIError
@@ -6,6 +7,19 @@ import time
 import os
 
 app = Flask(__name__)
+
+
+def get_host_ip():
+    try:
+        # Funciona en Linux
+        resultado = subprocess.check_output(
+            ["ip", "route", "show", "default"],
+            text=True
+        )
+        return resultado.split()[2]  # extrae la IP del gateway
+    except Exception:
+        # Fallback para Docker Desktop (Windows/Mac)
+        return "host.docker.internal"
 
 
 @app.route("/estado", methods=["GET"])
@@ -26,6 +40,9 @@ def ejecutarTareaRemota():
 
     parametros = data.get("parametros")
     # logica de tarea valida
+
+    host_ip = get_host_ip()
+    url_tarea = f"http://{host_ip}:{puerto_host}/ejecutarTarea"
 
     # logica de autenticacion y autorizacion de docker creo que no es necesario
     try:
@@ -49,7 +66,10 @@ def ejecutarTareaRemota():
 
         time.sleep(2)
 
-        url_tarea = f"http://host.docker.internal:{puerto_host}/ejecutarTarea"
+
+
+
+
 
         try:
             respuesta_tarea = requests.post(url_tarea, json=parametros)
