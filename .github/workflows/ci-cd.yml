@@ -43,6 +43,6 @@ jobs:
       - name: Build y Push - Servicio Tarea
         uses: docker/build-push-action@v5
         with:
-          context: ./hit1/servicioTarea
+          context: ./hit1/servicio-tarea
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ secrets.DOCKER_USERNAME }}/servicio-tarea:latest
