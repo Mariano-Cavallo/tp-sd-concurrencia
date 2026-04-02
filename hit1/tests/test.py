@@ -9,14 +9,14 @@ IMAGEN = "marianocavallo/servicio-tarea:latest"
 
 @pytest.fixture(scope="module")
 def servidor():
-    # Levanta el contenedor del servidor
     proc = subprocess.Popen([
         "docker", "run", "--rm",
+        "-d",                                        # ← agregar detach
+        "--name", "servidor-test",
         "-p", "8080:8080",
         "-v", "/var/run/docker.sock:/var/run/docker.sock",
         "marianocavallo/servidor:latest"
     ])
-
     # Espera a que el servidor esté listo
     for _ in range(15):
         try:
@@ -45,6 +45,8 @@ def test_suma_e2e(servidor):
         }
     }
     respuesta = requests.post(SERVIDOR_URL, json=payload, timeout=30)
+    print("Status:", respuesta.status_code)
+    print("Resultado:", respuesta.json())
     assert respuesta.status_code == 200
     assert respuesta.json()["resultado"] == 15
 
