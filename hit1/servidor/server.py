@@ -11,13 +11,14 @@ app = Flask(__name__)
 
 def get_host_ip():
     try:
-        # Funciona en Linux
         resultado = subprocess.check_output(
-            ["ip", "route", "show", "default"],
-            text=True
+            ["ip", "route", "show", "default"], text=True
         )
-        return resultado.split()[2]  # extrae la IP del gateway
-    except Exception:
+        ip = resultado.split()[2]
+        print(f"[DEBUG] Host IP detectada: {ip}")
+        return ip
+    except Exception as e:
+        print(f"[DEBUG] Falló detección de IP: {e}, usando host.docker.internal")
         # Fallback para Docker Desktop (Windows/Mac)
         return "host.docker.internal"
 
@@ -43,6 +44,8 @@ def ejecutarTareaRemota():
 
     host_ip = get_host_ip()
     url_tarea = f"http://{host_ip}:{puerto_host}/ejecutarTarea"
+    print(f"[DEBUG] URL del servicio tarea: {url_tarea}")
+
 
     # logica de autenticacion y autorizacion de docker creo que no es necesario
     try:
@@ -65,7 +68,6 @@ def ejecutarTareaRemota():
         )
 
         time.sleep(2)
-
 
         try:
             respuesta_tarea = requests.post(url_tarea, json=parametros)

@@ -37,7 +37,10 @@ jobs:
 
       - name: Ejecutar test 
         run: pytest hit1/tests/test.py -v
-               
+      
+      - name: Ver logs del servidor
+        if: always()          # corre aunque el test falle
+        run: docker logs servidor-test || true
   
   build-and-push:
     name: Build y Push a Docker Hub
