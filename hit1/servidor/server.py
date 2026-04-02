@@ -67,10 +67,6 @@ def ejecutarTareaRemota():
         time.sleep(2)
 
 
-
-
-
-
         try:
             respuesta_tarea = requests.post(url_tarea, json=parametros)
             datos_resultado = respuesta_tarea.json()
