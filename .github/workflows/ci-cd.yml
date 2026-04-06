@@ -32,7 +32,7 @@ jobs:
 
       - name: Pull de las imágenes necesarias
         run: |
-          docker pull marianocavallo/servidor:latest
+          docker pull marianocavallo/server:latest
           docker pull marianocavallo/servicio-tarea:latest
 
       - name: Ejecutar test 
