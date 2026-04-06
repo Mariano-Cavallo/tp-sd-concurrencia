@@ -1,0 +1,14 @@
+Modifique el servidor del Hit #1 para que acepte múltiples tareas concurrentes. Para ello:
+1)Pool de workers: Implemente un pool de workers con un límite configurable (por ejemplo, N workers máximos). 
+Cada worker ejecuta una tarea en un contenedor Docker independiente.
+2)Exclusión mutua: Cuando llegan más tareas que workers disponibles, las tareas deben encolarse. 
+Implemente la cola con exclusión mutua para garantizar que no haya condiciones de carrera al asignar tareas a 
+workers. Puede utilizar un mutex distribuido o implementar el algoritmo de Lamport para el acceso a la cola compartida.
+3)Relojes lógicos: Implemente timestamps lógicos (relojes de Lamport) en los mensajes entre cliente y 
+servidor para ordenar las solicitudes de manera consistente.
+4)Medición de throughput: Mida y documente el throughput del sistema (tareas completadas por minuto) 
+variando la cantidad de workers: 1, 2, 4 y 8. Presente los resultados en una tabla y grafique la curva de 
+escalabilidad. Analice si el speedup es lineal o si hay un cuello de botella. Considerando que todo corre en un 
+solo equipo: ¿cuáles son los recursos compartidos que podrían convertirse en cuello de botella 
+(CPU, memoria, I/O de disco, red de Docker, daemon de Docker)? ¿Cómo los identificaría y mediría?
+
