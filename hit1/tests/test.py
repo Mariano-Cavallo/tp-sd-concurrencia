@@ -22,7 +22,7 @@ def servidor():
         "--network", "mi-red",
         "-p", "8080:8080",
         "-v", "/var/run/docker.sock:/var/run/docker.sock",
-        "marianocavallo/servidor:latest"
+        "marianocavallo/server:latest"
     ])
 
     # Espera a que el servidor esté listo
