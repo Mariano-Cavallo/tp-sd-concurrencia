@@ -3,25 +3,20 @@ import docker
 from docker.errors import ImageNotFound, APIError
 import requests
 import time
-import os
-import subprocess
 
 app = Flask(__name__)
 
+NETWORK_NAME = "mi-red"
+CONTAINER_NAME = "servicio-tarea"
 
-def get_host_ip():
+
+def get_or_create_network(cliente):
     try:
-        resultado = (
-            subprocess.check_output(  # subprocess directo, NO asyncio.subprocess
-                ["ip", "route", "show", "default"], text=True
-            )
-        )
-        ip = resultado.split()[2]
-        print(f"[DEBUG] Host IP detectada: {ip}")
-        return ip
-    except Exception as e:
-        print(f"[DEBUG] Falló detección de IP: {e}, usando fallback 172.17.0.1")
-        return "172.17.0.1"  # IP del gateway Docker en Linux
+        cliente.networks.get(NETWORK_NAME)
+        print(f"[DEBUG] Red '{NETWORK_NAME}' ya existe")
+    except docker.errors.NotFound:
+        cliente.networks.create(NETWORK_NAME)
+        print(f"[DEBUG] Red '{NETWORK_NAME}' creada")
 
 
 @app.route("/estado", methods=["GET"])
@@ -40,34 +35,45 @@ def ejecutarTareaRemota():
     except docker.errors.DockerException as e:
         return jsonify({"error": "Error de conexión con Docker", "msg": str(e)}), 500
 
+    # Asegurar que la red existe
+    get_or_create_network(cliente)
+
     # PULL
     try:
         cliente.images.pull(imagen)
     except ImageNotFound:
         return jsonify({"error": "Imagen no encontrada"}), 404
 
-    # RUN
+    # Limpiar contenedor anterior si quedó colgado
     try:
-        puerto_host = 5001  # ← movido antes de usarse
-        host_ip = get_host_ip()  # ← obtener IP del host
-        url_tarea = f"http://{host_ip}:{puerto_host}/ejecutarTarea"
+        old = cliente.containers.get(CONTAINER_NAME)
+        old.remove(force=True)
+        print(f"[DEBUG] Contenedor anterior '{CONTAINER_NAME}' eliminado")
+    except docker.errors.NotFound:
+        pass
+
+    # RUN
+    container = None
+    try:
+        url_tarea = f"http://{CONTAINER_NAME}:5000/ejecutarTarea"
         print(f"[DEBUG] URL del servicio tarea: {url_tarea}")
 
         container = cliente.containers.run(
-            imagen, detach=True, ports={"5000/tcp": puerto_host}, remove=True
+            imagen,
+            detach=True,
+            name=CONTAINER_NAME,
+            network=NETWORK_NAME,
+            remove=True,
         )
 
-        time.sleep(2)
+        time.sleep(3)
 
         try:
             respuesta_tarea = requests.post(url_tarea, json=parametros)
             datos_resultado = respuesta_tarea.json()
         except requests.exceptions.ConnectionError:
             print("Error de conexión al servicio de la tarea")
-            return (
-                jsonify({"error": "No se pudo conectar con el servicio de la tarea"}),
-                500,
-            )
+            return jsonify({"error": "No se pudo conectar con el servicio de la tarea"}), 500
         finally:
             if container:
                 try:

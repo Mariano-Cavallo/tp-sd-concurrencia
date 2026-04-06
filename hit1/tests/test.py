@@ -9,14 +9,22 @@ IMAGEN = "marianocavallo/servicio-tarea:latest"
 
 @pytest.fixture(scope="module")
 def servidor():
+    # Crear la red si no existe
+    subprocess.run(
+        ["docker", "network", "create", "mi-red"],
+        capture_output=True  # si ya existe no falla en pantalla
+    )
+
     proc = subprocess.Popen([
         "docker", "run", "--rm",
-        "-d",                                        # ← agregar detach
+        "-d",
         "--name", "servidor-test",
+        "--network", "mi-red",
         "-p", "8080:8080",
         "-v", "/var/run/docker.sock:/var/run/docker.sock",
         "marianocavallo/servidor:latest"
     ])
+
     # Espera a que el servidor esté listo
     for _ in range(15):
         try:
@@ -33,6 +41,7 @@ def servidor():
 
     proc.terminate()
     proc.wait()
+    subprocess.run(["docker", "network", "rm", "mi-red"], capture_output=True)
 
 
 def test_suma_e2e(servidor):
@@ -49,5 +58,3 @@ def test_suma_e2e(servidor):
     print("Resultado:", respuesta.json())
     assert respuesta.status_code == 200
     assert respuesta.json()["resultado"] == 15
-
-
