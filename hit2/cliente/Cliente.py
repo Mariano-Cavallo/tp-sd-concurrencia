@@ -13,7 +13,15 @@ payload = {
     "timeout": 15,
 }
 
+#localhost:8080 es el puerto donde el contenedor docker intercepta la solicitud al servidor htttp
+#y la redirige hacia el servidor, no es el puerto donde realmente escucha el servidor flask
+# el puerto donde intercepta las peticiones el proceso Docker cuando esta levantado el contenedor
+# es, por ejemplo: docker run -p 9999:8080 servidor:latest, en este caso seria 9999 donde Docker intercepta
+# las requests, por lo que la url a la cual se hace la request seria: SERVIDOR_URL = "http://localhost:9999/ejecutarTareaRemota"
 
+#la response del servidor tambien pasa por el proceso Docker, por lo que el flujo para la request seria:
+#cliente->docker (redirige conexion a puerto donde escucha el server flask)->server_flask
+#para la response: server_flask->docker->cliente
 def enviar_request():
     response = requests.post(SERVIDOR_URL, json=payload)
     print("'Status code':", response.status_code)
