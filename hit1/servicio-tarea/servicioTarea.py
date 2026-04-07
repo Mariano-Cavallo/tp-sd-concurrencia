@@ -28,10 +28,9 @@ def ejecutarTarea():
     if resultado is not None:
         response = jsonify({"resultado": resultado})
 
-        # Callback que se ejecuta después de que el cliente recibe los datos
         @response.call_on_close
         def shutdown():
-            os._exit(0)  # Finaliza el proceso y, por ende, el contenedor
+            os._exit(0)  
 
         return response, 200
 

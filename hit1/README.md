@@ -54,7 +54,7 @@ docker run --rm \
   --network mi-red \
     -p 8080:8080 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  marianocavallo/servidor:latest
+  marianocavallo/server:latest
 ```
 
 > **¿Por qué `-v /var/run/docker.sock`?** El orquestador necesita comunicarse con el daemon de Docker del host para poder lanzar contenedores dinámicamente. Este montaje le da acceso al socket Unix de Docker.
