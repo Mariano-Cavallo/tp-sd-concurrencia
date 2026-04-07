@@ -2,12 +2,7 @@ import requests
 
 SERVIDOR_URL = "http://localhost:8080/ejecutarTareaRemota"
 IMAGEN = "marianocavallo/servicio-tarea:latest"
-TAREA = "suma"  
-A = 5
-B = 3
 
-
-'''
 
 while True:
     tarea = input("¿Qué tarea querés realizar? (suma/resta): ").strip().lower()
@@ -24,14 +19,14 @@ while True:
     except ValueError:
         print("Valor no válido. Ingresá un número.")
 
-'''
+
 # Armar payload
 payload = {
     "imagen": IMAGEN,
     "parametros": {
-        "tarea": TAREA,
-        "a": A,
-        "b": B,
+        "tarea": tarea,
+        "a": a,
+        "b": b,
     },
 }
 

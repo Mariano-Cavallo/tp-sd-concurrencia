@@ -7,7 +7,6 @@ WORKDIR /app
 # Instalar dependencias del sistema necesarias para algunas librerías de Python
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    iproute2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar el archivo de requerimientos e instalar dependencias
