@@ -45,22 +45,23 @@ def get_estado(node_id):
 
 @pytest.fixture(scope="module")
 def cluster():
-    # Crear red
+    # Crear red del cluster
     subprocess.run(["docker", "network", "create", NETWORK], capture_output=True)
+    # Crear mi-red anticipadamente: el servidor hit1 corre los task containers en esta
+    # red y luego los llama por hostname. Los workers necesitan estar conectados a ella
+    # para poder resolver "servicio-tarea" en Linux (en Docker Desktop funciona sin esto
+    # porque tiene un modelo de red más permisivo entre redes).
+    subprocess.run(["docker", "network", "create", "mi-red"], capture_output=True)
 
-    # Levantar workers (usan imagen del hit1)
-    subprocess.run([
-        "docker", "run", "-d", "--name", "worker1",
-        "--network", NETWORK,
-        "-v", "/var/run/docker.sock:/var/run/docker.sock",
-        "servidor-local"
-    ], check=True)
-    subprocess.run([
-        "docker", "run", "-d", "--name", "worker2",
-        "--network", NETWORK,
-        "-v", "/var/run/docker.sock:/var/run/docker.sock",
-        "servidor-local"
-    ], check=True)
+    # Levantar workers (imagen hit1) y conectarlos a ambas redes
+    for w in ["worker1", "worker2"]:
+        subprocess.run([
+            "docker", "run", "-d", "--name", w,
+            "--network", NETWORK,
+            "-v", "/var/run/docker.sock:/var/run/docker.sock",
+            "servidor-local"
+        ], check=True)
+        subprocess.run(["docker", "network", "connect", "mi-red", w], check=True)
 
     # Levantar los 3 nodos Bully
     all_nodes_env = "1:node1:5000,2:node2:5000,3:node3:5000"
@@ -79,11 +80,6 @@ def cluster():
         ], check=True)
 
     # Levantar nginx
-    nginx_conf = subprocess.run(
-        ["docker", "inspect", "--format", "{{.Id}}", "hit3-nginx"],
-        capture_output=True
-    )
-    # Montar config desde la imagen; usamos bind-mount relativo al repo
     subprocess.run([
         "docker", "run", "-d",
         "--name", "hit3-nginx",
@@ -115,6 +111,7 @@ def cluster():
     subprocess.run(["docker", "stop"] + containers, capture_output=True)
     subprocess.run(["docker", "rm"] + containers, capture_output=True)
     subprocess.run(["docker", "network", "rm", NETWORK], capture_output=True)
+    subprocess.run(["docker", "network", "rm", "mi-red"], capture_output=True)
 
 
 def _nginx_conf_path():
