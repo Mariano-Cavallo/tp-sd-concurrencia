@@ -66,10 +66,40 @@ jobs:
         if: always()
         run: docker logs servidor-test || true
 
+  tests-hit3:
+    name: Test hit3
+    runs-on: ubuntu-latest
+    needs: gitleaks
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependencias Python
+        run: pip install requests pytest
+
+      - name: Pull servicio-tarea
+        run: docker pull marianocavallo/servicio-tarea:latest
+
+      - name: Build imagen worker (servidor-local)
+        run: docker build -t servidor-local ./hit1/servidor
+
+      - name: Build imagen nodo Bully
+        run: docker build -t bully-node ./hit3/node
+
+      - name: Ejecutar test hit3
+        run: pytest hit3/tests/test.py -v
+
+      - name: Ver logs de los nodos
+        if: always()
+        run: |
+          docker logs node1 || true
+          docker logs node2 || true
+          docker logs node3 || true
+
   build-and-push:
     name: Build y Push a Docker Hub
     runs-on: ubuntu-latest
-    needs: [tests, tests-hit2]
+    needs: [tests, tests-hit2, tests-hit3]
 
     steps:
       - uses: actions/checkout@v4
